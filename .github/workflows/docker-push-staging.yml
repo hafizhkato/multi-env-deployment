@@ -3,11 +3,11 @@ name: Build and Push Docker Image to ECR
 on:
   push:
     branches:
-      - main
+      - staging
 
 env:
   AWS_REGION: ap-southeast-1
-  ECR_REPOSITORY: multi-env-backend-dev
+  ECR_REPOSITORY: multi-env-backend-staging
   CONTAINER_NAME: backend-app
 
 jobs:

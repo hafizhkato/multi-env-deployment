@@ -3,12 +3,12 @@ name: Deploy to ECS
 on:
   push:
     branches:
-      - main
+      - production
 
 env:
   AWS_REGION: ap-southeast-1
-  ECR_REPO: 703671927585.dkr.ecr.ap-southeast-1.amazonaws.com/multi-env-backend-dev
-  ENV: dev                          # or prod depending on branch/workflow
+  ECR_REPO: 703671927585.dkr.ecr.ap-southeast-1.amazonaws.com/multi-env-backend-prod
+  ENV: prod                          # or prod depending on branch/workflow
 
 jobs:
   deploy:
@@ -37,7 +37,7 @@ jobs:
     - name: Fill taskdef.json with variables
       run: |
         sed "s|\${IMAGE_URI}|${{ env.ECR_REPO }}:${{ github.sha }}|g" ecs/taskdef.json |
-        sed "s|\${EXECUTION_ROLE}|${{ secrets.ECS_EXECUTION_ROLE_ARN }}|g" |
+        sed "s|\${EXECUTION_ROLE}|${{ secrets.ECS_EXECUTION_ROLE_ARN }}-${{ env.ENV }}|g" |
         sed "s|\${ENV}|${{ env.ENV }}|g" > taskdef-filled.json
 
     - name: Register new ECS task definition
@@ -50,7 +50,7 @@ jobs:
     - name: Update ECS service
       run: |
         aws ecs update-service \
-          --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
-          --service ${{ secrets.ECS_SERVICE_NAME }} \
+          --cluster ${{ secrets.ECS_CLUSTER_NAME }}-${{ env.ENV }} \
+          --service ${{ secrets.ECS_SERVICE_NAME }}-${{ env.ENV }} \
           --force-new-deployment \
           --region ${{ env.AWS_REGION }}

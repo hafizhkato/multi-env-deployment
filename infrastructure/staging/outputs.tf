@@ -13,3 +13,8 @@ output "ecr_repo_url" {
 output "ecs_cluster_name" {
   value = aws_ecs_cluster.app_cluster.name
 }
+
+output "ecs_task_execution_role_arn" {
+  value = aws_iam_role.ecs_task_execution_role.arn
+  
+}
