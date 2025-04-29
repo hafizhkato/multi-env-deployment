@@ -22,3 +22,8 @@ output "ecs_service_name" {
   value = aws_ecs_service.backend_service.name
   
 }
+
+output "ecs_task_execution_role_arn" {
+  value = aws_iam_role.ecs_task_execution_role.arn
+  
+}

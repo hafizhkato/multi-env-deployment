@@ -1,0 +1,21 @@
+{
+    "family": "backend-task-${ENV}",
+    "networkMode": "awsvpc",
+    "executionRoleArn": "${EXECUTION_ROLE}",
+    "requiresCompatibilities": ["FARGATE"],
+    "cpu": "256",
+    "memory": "512",
+    "containerDefinitions": [
+      {
+        "name": "backend-app",
+        "image": "${IMAGE_URI}",
+        "essential": true,
+        "portMappings": [
+          {
+            "containerPort": 3000,
+            "hostPort": 3000
+          }
+        ]
+      }
+    ]
+  }
