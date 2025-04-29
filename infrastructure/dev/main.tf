@@ -32,9 +32,30 @@ resource "aws_subnet" "subnet_a" {
   }
 }
 
-resource "aws_security_group" "mysql_sg" {
-  name        = "mysql-onprem-sg"
-  description = "Allow SSH and MySQL access"
+resource "aws_subnet" "subnet_b" {
+  vpc_id                  = data.aws_vpc.default.id
+  cidr_block              = cidrsubnet(data.aws_vpc.default.cidr_block, 8, 2) # 2nd subnet
+  availability_zone       = "ap-southeast-1b"
+  map_public_ip_on_launch = true
+  tags = {
+    Name = "public-subnet-1b"
+  }
+}
+
+resource "aws_subnet" "subnet_c" {
+  vpc_id                  = data.aws_vpc.default.id
+  cidr_block              = cidrsubnet(data.aws_vpc.default.cidr_block, 8, 3) # 3rd subnet
+  availability_zone       = "ap-southeast-1c"
+  map_public_ip_on_launch = true
+  tags = {
+    Name = "public-subnet-1c"
+  }
+}
+
+resource "aws_security_group" "backend_sg" {
+  name        = "backend-sg-${var.env}"
+  vpc_id      = data.aws_vpc.default.id
+  description = "Allow HTTP traffic to backend"
 
   ingress {
     from_port   = 22
@@ -44,10 +65,10 @@ resource "aws_security_group" "mysql_sg" {
   }
 
   ingress {
-    from_port   = 3306
-    to_port     = 3306
+    from_port   = 3000
+    to_port     = 3000
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Open for testing; adjust in prod
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -130,4 +151,25 @@ resource "aws_ecs_task_definition" "backend_task" {
       ]
     }
   ])
+}
+
+resource "aws_ecs_service" "backend_service" {
+  name            = "backend-service-${var.env}"
+  cluster         = aws_ecs_cluster.app_cluster.id
+  task_definition = aws_ecs_task_definition.backend_task.arn
+  launch_type     = "FARGATE"
+  desired_count   = 1
+
+  network_configuration {
+    subnets          = [
+      aws_subnet.subnet_a.id,
+      aws_subnet.subnet_b.id,
+      aws_subnet.subnet_c.id,
+    ]
+    assign_public_ip = true
+    security_groups  = [aws_security_group.backend_sg.id]
+  }
+
+  deployment_minimum_healthy_percent = 50
+  deployment_maximum_percent         = 200
 }
